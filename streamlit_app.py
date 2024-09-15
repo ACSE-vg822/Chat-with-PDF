@@ -13,7 +13,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 
 ## Set page configuration at the very top
-st.set_page_config(page_title="Chat with PDF using AWS Bedrock", page_icon="💁")
+st.set_page_config(page_title="Chat with PDF using AWS Bedrock", page_icon="🌍")
 
 ## Bedrock Clients
 bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
@@ -23,28 +23,47 @@ bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1", cl
 st.markdown("""
     <style>
         .main-header {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
-            color: #4CAF50;
+            color: #34A853;
+            text-align: center;
+            margin-top: 20px;
         }
         .sub-header {
-            font-size: 20px;
-            color: #4CAF50;
+            font-size: 22px;
+            color: #0B5394;
+            margin-top: 20px;
+            text-align: center;
         }
         .sidebar-button {
-            background-color: #f0f0f0;
-            color: #333;
+            background-color: #E0F7FA;
+            color: #01579B;
             font-weight: bold;
-            border-radius: 5px;
-            padding: 5px;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #0288D1;
+            transition: background-color 0.3s ease;
+        }
+        .sidebar-button:hover {
+            background-color: #0288D1;
+            color: white;
         }
         .success-message {
-            color: #4CAF50;
+            color: #34A853;
         }
         .description {
-            font-size: 16px;
+            font-size: 18px;
             color: #333;
             margin-top: 10px;
+            background-color: #F1F8E9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .footer {
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+            margin-top: 30px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -120,23 +139,28 @@ def main():
         st.session_state['faiss_index'] = None
 
     # Main Header
-    st.markdown('<div class="main-header">Chat with PDF using AWS Bedrock 💁</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">🌍 Chat with PDF using AWS Bedrock 🧠</div>', unsafe_allow_html=True)
+    
+    st.write("Welcome to the PDF Chatbot! Use this app to interact with PDFs using Amazon Bedrock's AI models.")
     
     # Description of the default dataset
     st.markdown("""
     <div class="description">
-        The default dataset contains information on topics such as Greenhouse Gas (GHG) emissions, 
+        📚 Default Dataset: This dataset contains information on topics such as Greenhouse Gas (GHG) emissions, 
         Environmental, Social, and Governance (ESG) criteria, climate change policies, and related 
         environmental agreements. You can ask questions about subjects like the Kyoto Protocol, 
         the Paris Agreement, carbon footprint, climate initiatives, and more. 
-        Ask questions such as "What is the Kyoto Protocol?" or "What is the Paris Agreement?"
+        <br>💡 Example Questions: "What is the Kyoto Protocol?" or "What is the Paris Agreement?"
     </div>
     """, unsafe_allow_html=True)
 
-    st.write("Welcome to the PDF Chatbot! Use this app to interact with PDFs using Amazon Bedrock's AI models.")
-
     # Layout for File Upload and Vector Store Options
     st.sidebar.title("Options 🛠️")
+
+    # Sidebar description for the default dataset
+    st.sidebar.markdown("""
+    You can upload your own PDFs and customize the chatbot!
+    """)
 
     # File uploader for up to 5 PDFs
     uploaded_files = st.sidebar.file_uploader(
@@ -155,51 +179,58 @@ def main():
     with st.sidebar:
         st.markdown('<div class="sub-header">Update Vector Store</div>', unsafe_allow_html=True)
         st.write("Choose whether to use the uploaded PDFs or the default set.")
-
-        if st.button("📂 Update Vector with Uploaded PDFs"):
-            if not uploaded_files:
-                st.sidebar.warning("Please upload some PDF files first.")
-            else:
-                with st.spinner("Processing uploaded PDFs..."):
-                    docs = data_ingestion(uploaded_files)
-                    # Check if docs are empty
-                    if not docs:
-                        st.error("No text found in the uploaded PDFs. Please check the files and try again.")
-                    else:
-                        # Create and save a new vector store for the uploaded files
-                        try:
-                            st.session_state['faiss_index'] = FAISS.from_documents(docs, bedrock_embeddings)
-                            st.session_state['faiss_index'].save_local("faiss_index")
-                            st.success("Vector store updated with uploaded PDFs.", icon="✅")
-                        except ValueError as e:
-                            st.error(f"Error creating vector store: {e}")
-
-    # Load the precomputed FAISS index for the default dataset
-    if st.sidebar.button("🗂️ Use Precomputed Vector Store for Default PDFs"):
-        with st.spinner("Loading precomputed FAISS index for default PDFs..."):
-            st.session_state['faiss_index'] = FAISS.load_local("default_faiss_index", bedrock_embeddings, allow_dangerous_deserialization=True)
-            st.success("Loaded precomputed vector store for default PDFs.", icon="✅")
+        st.button("📂 Update Vector with Uploaded PDFs", key="update_uploaded", help="Use this option to update the vector store with your uploaded PDFs.", on_click=lambda: update_vector(uploaded_files))
+        st.button("📁 Use Precomputed Vector Store for Default PDFs", key="use_default", help="Use the precomputed vector store for the default dataset.", on_click=use_default_vector_store)
 
     # Separator line
     st.markdown("---")
 
     # User Input for Questions
-    st.subheader("Ask a Question from the PDF Files 📄")
-    user_question = st.text_input("Enter your question:", placeholder="Type your question here...")
+    st.markdown('<div class="sub-header">Ask a Question from the PDF Files 📄</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="ask-question-section">', unsafe_allow_html=True)
+        user_question = st.text_input("Enter your question:", placeholder="Type your question here...")
 
-    # Button to get the response from the LLM
-    if st.button("💬 Get Answer"):
-        if st.session_state['faiss_index'] is None:
-            st.error("Please select or upload PDFs and update the vector store before asking a question.")
-        else:
-            with st.spinner("Processing your question..."):
+        # Button to get the response from the LLM
+        if st.button("💬 Get Answer"):
+            if st.session_state['faiss_index'] is None:
+                st.error("Please select or upload PDFs and update the vector store before asking a question.")
+            else:
+                with st.spinner("Processing your question..."):
+                    try:
+                        llm = get_titan_llm()
+                        answer = get_response_llm(llm, st.session_state['faiss_index'], user_question)
+                        st.success("📜 Here is the answer:")
+                        st.write(answer)
+                    except Exception as e:
+                        st.error(f"Error during LLM response generation: {e}")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Footer
+    st.markdown('<div class="footer">🌿 Empowering Environmental Awareness with AI 🌱</div>', unsafe_allow_html=True)
+
+def update_vector(uploaded_files):
+    if not uploaded_files:
+        st.sidebar.warning("Please upload some PDF files first.")
+    else:
+        with st.spinner("Processing uploaded PDFs..."):
+            docs = data_ingestion(uploaded_files)
+            # Check if docs are empty
+            if not docs:
+                st.error("No text found in the uploaded PDFs. Please check the files and try again.")
+            else:
+                # Create and save a new vector store for the uploaded files
                 try:
-                    llm = get_titan_llm()
-                    answer = get_response_llm(llm, st.session_state['faiss_index'], user_question)
-                    st.success("Here is the answer:", icon="📜")
-                    st.write(answer)
-                except Exception as e:
-                    st.error(f"Error during LLM response generation: {e}")
+                    st.session_state['faiss_index'] = FAISS.from_documents(docs, bedrock_embeddings)
+                    st.session_state['faiss_index'].save_local("faiss_index")
+                    st.success("Vector store updated with uploaded PDFs.", icon="✅")
+                except ValueError as e:
+                    st.error(f"Error creating vector store: {e}")
+
+def use_default_vector_store():
+    with st.spinner("Loading precomputed FAISS index for default PDFs..."):
+        st.session_state['faiss_index'] = FAISS.load_local("default_faiss_index", bedrock_embeddings, allow_dangerous_deserialization=True)
+        st.success("Loaded precomputed vector store for default PDFs.", icon="✅")
 
 if __name__ == "__main__":
     main()
