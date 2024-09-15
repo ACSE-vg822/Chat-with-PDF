@@ -1,5 +1,6 @@
 chat_pdf/
 faiss_index/
+.streamlit/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

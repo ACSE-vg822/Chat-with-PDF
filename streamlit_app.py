@@ -15,8 +15,16 @@ from langchain.chains import RetrievalQA
 ## Set page configuration at the very top
 st.set_page_config(page_title="Chat with PDF using AWS Bedrock", page_icon="🌍")
 
+# Access AWS credentials from Streamlit secrets
+aws_access_key_id = st.secrets["aws"]["AWS_ACCESS_KEY_ID"]
+aws_secret_access_key = st.secrets["aws"]["AWS_SECRET_ACCESS_KEY"]
+aws_region = st.secrets["aws"]["AWS_DEFAULT_REGION"]
+
 ## Bedrock Clients
-bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+bedrock = boto3.client(service_name="bedrock-runtime",
+                        region_name=aws_region,
+                        aws_access_key_id=aws_access_key_id,
+                        aws_secret_access_key=aws_secret_access_key)
 bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1", client=bedrock)
 
 # Apply custom CSS for styling
