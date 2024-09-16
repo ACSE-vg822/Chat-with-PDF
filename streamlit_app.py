@@ -4,11 +4,12 @@ import sys
 import boto3
 import tempfile
 import streamlit as st
-from langchain_community.embeddings import BedrockEmbeddings
+
+from langchain_aws import BedrockEmbeddings
 from langchain.llms.bedrock import Bedrock
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 
@@ -127,7 +128,16 @@ PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
 
+# def preprocess_query(query):
+#     # Simplify the query by removing common question words
+#     query = query.lower().strip()
+#     if query.startswith("what is "):
+#         query = query.replace("what is ", "")
+#     return query
+
 def get_response_llm(llm, vectorstore_faiss, query):
+    # Preprocess the query before retrieving the answer
+    # query = preprocess_query(query)
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
@@ -139,6 +149,7 @@ def get_response_llm(llm, vectorstore_faiss, query):
     )
     answer = qa({"query": query})
     return answer['result']
+
 
 def main():
     # Initialize session state for faiss_index
@@ -157,7 +168,7 @@ def main():
         Environmental, Social, and Governance (ESG) criteria, climate change policies, and related 
         environmental agreements. You can ask questions about subjects like the Kyoto Protocol, 
         the Paris Agreement, carbon footprint, climate initiatives, and more. 
-        <br>💡 Example Questions: "What is the Kyoto Protocol?" or "What is the Paris Agreement?"
+        <br>💡 Example Questions: "What is the Kyoto Protocol?" or "What is the NetZero"
     </div>
     """, unsafe_allow_html=True)
 

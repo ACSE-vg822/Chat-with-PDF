@@ -2,10 +2,11 @@
 import os
 import boto3
 import tempfile
-from langchain_community.embeddings import BedrockEmbeddings
+
+from langchain_aws import BedrockEmbeddings
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 
 ## Bedrock Clients
 bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
