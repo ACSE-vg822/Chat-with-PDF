@@ -128,16 +128,8 @@ PROMPT = PromptTemplate(
     template=prompt_template, input_variables=["context", "question"]
 )
 
-# def preprocess_query(query):
-#     # Simplify the query by removing common question words
-#     query = query.lower().strip()
-#     if query.startswith("what is "):
-#         query = query.replace("what is ", "")
-#     return query
-
 def get_response_llm(llm, vectorstore_faiss, query):
     # Preprocess the query before retrieving the answer
-    # query = preprocess_query(query)
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
