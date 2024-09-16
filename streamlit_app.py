@@ -168,7 +168,7 @@ def main():
         Environmental, Social, and Governance (ESG) criteria, climate change policies, and related 
         environmental agreements. You can ask questions about subjects like the Kyoto Protocol, 
         the Paris Agreement, carbon footprint, climate initiatives, and more. 
-        <br>💡 Example Questions: "What is the Kyoto Protocol?" or "What is the NetZero"
+        <br>💡 Example Questions: "What is the Kyoto Protocol?" or "What is NetZero?"
     </div>
     """, unsafe_allow_html=True)
 
