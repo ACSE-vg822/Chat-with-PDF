@@ -94,7 +94,6 @@ def data_ingestion(uploaded_files=None):
             # Optionally delete the temporary file after loading it
             os.remove(temp_file_path)
 
-    # No else clause needed because precomputed index will be used for the default set
     return documents
 
 def get_titan_llm():
@@ -226,6 +225,7 @@ def update_vector(uploaded_files):
             # Check if docs are empty
             if not docs:
                 st.error("No text found in the uploaded PDFs. Please check the files and try again.")
+                st.stop()
             else:
                 # Create and save a new vector store for the uploaded files
                 try:
